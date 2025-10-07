@@ -20,3 +20,6 @@ print(type(usa_col))
 usa_geom = usa_col.iloc[0]
 
 print(type(usa_geom))
+
+# calculate the intersection of the geometry objects
+border = usa_geom.intersection(mex_geom)
