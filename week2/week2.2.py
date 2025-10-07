@@ -139,3 +139,23 @@ my_ax.legend(handles=[
 savefig('out/2.png', bbox_inches='tight')
 print("done!")
 
+# Wall dimensions
+wall_length = cumulative_length
+wall_height = 10
+wall_thickness = 2
+
+# Brick specifications  
+brick_length = 0.215  # Convert mm to m
+brick_width = 0.103
+brick_height = 0.065
+brick_price = 0.77
+
+# Calculate volumes
+wall_volume = wall_length * wall_height * wall_thickness
+brick_volume = brick_length * brick_width * brick_height
+
+# Calculate brick count and total cost
+brick_count = wall_volume / brick_volume
+total_cost = brick_count * brick_price
+
+print(f"Total cost: £{total_cost:,.2f}")
