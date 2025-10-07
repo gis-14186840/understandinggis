@@ -4,6 +4,11 @@ from matplotlib.pyplot import subplots, savefig, title
 
 from pyproj import Geod
 
+from matplotlib_scalebar.scalebar import ScaleBar
+
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch 
+
 # load the shapefile of countries - this gives a table of 12 columns and 246 rows (one per country)
 world = read_file("E:/Manchester/UGIS/data/natural-earth/ne_10m_admin_0_countries.shp")
 
@@ -52,7 +57,6 @@ GeoSeries(border).plot(
   ax = my_ax
 	)
 
-
 # set which ellipsoid you would like to use
 g = Geod(ellps='WGS84')
 
@@ -76,8 +80,6 @@ for segment in border.geoms:
     
     # Add the distance to our cumulative total
     cumulative_length += distance
-
-
 
 # set title
 title(f"Trump's wall would have been {cumulative_length / 1000:.2f} km long.")
@@ -116,6 +118,22 @@ graticule.to_crs(lambert_conic).plot(
     color='grey',
     linewidth = 1,
     )
+
+# add north arrow
+x, y, arrow_length = 0.98, 0.99, 0.1
+my_ax.annotate('N', xy=(x, y), xytext=(x, y-arrow_length),
+	arrowprops=dict(facecolor='black', width=5, headwidth=15),
+	ha='center', va='center', fontsize=20, xycoords=my_ax.transAxes)
+
+# add scalebar
+my_ax.add_artist(ScaleBar(dx=1, units="m", location="lower left", length_fraction=0.25))
+
+# add legend
+my_ax.legend(handles=[
+        Patch(facecolor='#ccebc5', edgecolor='#4daf4a', label='USA'),
+        Patch(facecolor='#fed9a6', edgecolor='#ff7f00', label='Mexico'),
+        Line2D([0], [0], color='#984ea3',  lw=0.6, label='Border')
+    ],loc='lower right')
 
 # save the result
 savefig('out/2.png', bbox_inches='tight')
