@@ -41,6 +41,7 @@ print("=== METHOD 1: Using explicit spatial index with buffered boundary ===")
 polygon = gulu_district.geometry.iloc[0]
 buffered_polygon = polygon.buffer(10500)  # 10.5km buffer
 
+# report how many wells there are at this stage
 print(f"Initial wells: {len(water_points.index)}")
 
 
@@ -53,19 +54,19 @@ idx = STRtree(geoms)
 
 
 
-# Use spatial index to find wells within buffered area
+# get the wells that intersect bounds of the district
 possible_matches_index = idx.query(buffered_polygon)
 possible_matches = water_points.iloc[possible_matches_index]
 print(f"Potential wells (with buffer): {len(possible_matches.index)}")
 
 
-# Precise filtering with buffered polygon
+# search the possible matches for precise matches
 precise_matches = possible_matches.loc[possible_matches.within(buffered_polygon)]
 print(f"Filtered wells (with buffer): {len(precise_matches.index)}")
 
 
 # rebuild the spatial index using the new, smaller dataset
-# get the geometries from the precise_matches geodataframe as a list
+# initialise an instance of an rtree Index object
 geoms_precise = precise_matches.geometry.to_list()
 idx = STRtree(geoms_precise)
 
@@ -129,12 +130,13 @@ print("=== METHOD 2: Using geopandas built-in spatial index ===")
 # Reset water points to original data
 water_points = read_file("E:/Manchester/UGIS/data/gulu/water_points.shp").to_crs(pop_points.crs)
 
-# Ensure spatial index is constructed
+# ensure that the spatial index has been constructed
 water_points.sindex
 
+# report how many wells there are after the operation
 print(f"Initial wells: {len(water_points)}")
 
-# Use geopandas built-in spatial operations with buffered polygon
+# get the indexes of wells within the district polygon
 precise_matches_gpd = water_points.loc[water_points.within(buffered_polygon)]
 
 print(f"Filtered wells (geopandas method): {len(precise_matches_gpd)}")
