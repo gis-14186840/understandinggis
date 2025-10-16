@@ -5,6 +5,10 @@ from geopandas import read_file
 
 from shapely import STRtree
 
+from matplotlib_scalebar.scalebar import ScaleBar
+from matplotlib.pyplot import subplots, savefig, title
+
+
 def distance(x1, y1, x2, y2):
     """
     * Use Pythagoras' theorem to measure the distance. This is acceptable in this case because:
@@ -142,4 +146,49 @@ print(f"Mean distance to water in Gulu District: {mean:,.0f}m.")
 print(f"Maximum distance to water in Gulu District: {max(distances):,.0f}m.")
 
 
+
+# create map axis object
+fig, my_ax = subplots(1, 1, figsize=(16, 10))
+
+# remove axes
+my_ax.axis('off')
+
+# add title
+title("Distance to Nearest Well, Gulu District, Uganda")
+
+# add the district boundary
+gulu_district.plot(
+    ax = my_ax,
+    color = (0, 0, 0, 0),	# this is (red, green, blue, alpha) and means black, but transparent (alpha=0)
+    linewidth = 1,
+	edgecolor = 'black',		# this is just a shortcut for (0, 0, 0, 1)
+    )
+
+# plot the locations, coloured by distance to water
+pop_points.plot(
+    ax = my_ax,
+    column = 'nearest_well',
+    linewidth = 0,
+	markersize = 1,
+    cmap = 'RdYlBu_r',
+    scheme = 'quantiles',
+    legend = 'True',
+    legend_kwds = {
+        'loc': 'lower right',
+        'title': 'Distance to Nearest Well'
+        }
+    )
+
+# add north arrow
+x, y, arrow_length = 0.98, 0.99, 0.1
+my_ax.annotate('N', xy=(x, y), xytext=(x, y-arrow_length),
+	arrowprops=dict(facecolor='black', width=5, headwidth=15),
+	ha='center', va='center', fontsize=20, xycoords=my_ax.transAxes)
+
+# add scalebar
+my_ax.add_artist(ScaleBar(dx=1, units="m", location="lower left", length_fraction=0.25))
+
+# save the result
+savefig('out/3.png', bbox_inches='tight')
+print("done!")
 
