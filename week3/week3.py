@@ -76,3 +76,54 @@ precise_matches = possible_matches.loc[possible_matches.within(polygon)]
 
 # how many rows are left now?
 print(f"Filtered wells: {len(precise_matches.index)}")
+
+
+# rebuild the spatial index using the new, smaller dataset
+# get the geometries from the precise_matches geodataframe as a list
+geoms_precise = precise_matches.geometry.to_list()
+idx = STRtree(geoms_precise)
+
+
+# Declare an empty list to store distances
+distances = []
+
+# loop through each population point
+for id, house in pop_points.iterrows():
+    
+    # 1: Get the index of the nearest well to the current population point
+    # use the spatial index to get the index of the closest well
+    nearest_well_index = idx.nearest(house.geometry)
+        
+    # 2: Extract the row of data corresponding to the nearest well
+    # use the spatial index to get the closest well object from the original dataset
+    nearest_well = precise_matches.iloc[nearest_well_index].geometry
+        
+    # 3: Extract the Point from the MultiPoint (if necessary)
+    # .geoms[0] extracts the first Point from the MultiPoint
+    if hasattr(nearest_well, 'geoms'):
+        nearest_well_point = nearest_well.geoms[0]
+    else:
+        nearest_well_point = nearest_well
+        
+    # 4: Measure the distance and append to the list
+    # store the distance to the nearest well
+    distances.append(distance(
+        house.geometry.x, 
+        house.geometry.y, 
+        nearest_well_point.x, 
+        nearest_well_point.y
+        ))
+        
+    # Print progress every 1000 iterations
+    if id % 10000 == 0:
+        print(f"Processed {id} population points...")
+
+# Print the length of distances list to verify
+print(f"Total distances calculated: {len(distances)}")
+
+# Calculate and print the mean distance
+if distances:
+    mean_distance = sum(distances) / len(distances)
+    print(f"Mean distance to nearest well: {mean_distance:.2f} meters")
+        
+        
