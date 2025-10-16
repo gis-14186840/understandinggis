@@ -121,9 +121,25 @@ for id, house in pop_points.iterrows():
 # Print the length of distances list to verify
 print(f"Total distances calculated: {len(distances)}")
 
-# Calculate and print the mean distance
-if distances:
-    mean_distance = sum(distances) / len(distances)
-    print(f"Mean distance to nearest well: {mean_distance:.2f} meters")
         
-        
+    
+# Check the first 5 distance values
+print(distances[:5])
+
+# store distance to nearest well
+pop_points['nearest_well'] = distances
+
+# Print the column names to verify the new column
+print("Columns in pop_points:", pop_points.columns.tolist())
+print()
+
+
+# Calculate the mean distance
+mean = sum(distances) / len(distances)
+
+print(f"Minimum distance to water in Gulu District: {min(distances):,.0f}m.")
+print(f"Mean distance to water in Gulu District: {mean:,.0f}m.")
+print(f"Maximum distance to water in Gulu District: {max(distances):,.0f}m.")
+
+
+
