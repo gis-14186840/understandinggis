@@ -13,3 +13,12 @@ uk = world[(world['ISO_A3'] == 'GBR')].to_crs(OSGB).geometry.iloc[0]	# COMPLETE 
 
 # report geometry type
 print(f"geometry type: {uk.geom_type}")
+
+
+from sys import exit
+
+# quit the analysis if we are dealing with any geometry but a MultiPolygon
+if uk.geom_type != 'MultiPolygon':
+  print("Geometry is not a MultiPolygon, exiting...")
+  exit()
+  
