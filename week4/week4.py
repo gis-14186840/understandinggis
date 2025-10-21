@@ -6,6 +6,12 @@ from math import sqrt
 
 from shapely.geometry import LineString
 
+
+from geopandas import GeoSeries # THIS ONE CAN BE COMBINED WITH AN EXISTING IMPORT STATEMENT
+from matplotlib_scalebar.scalebar import ScaleBar
+from matplotlib.pyplot import subplots, savefig, subplots_adjust
+
+
 # open a dataset of all countries in the world
 world = read_file("E:/Manchester/UGIS/data/natural-earth/ne_10m_admin_0_countries.shp")
 
@@ -153,3 +159,50 @@ print(f"original length: {before_line.length / 1000:.2f}km\n")
 after_line = LineString(simplified_nodes)
 print(f"simplified node count: {len(simplified_nodes)}")
 print(f"simplified length: {after_line.length / 1000:.2f}km\n")
+
+
+# create map axis object, with two axes (maps)
+fig, my_axs = subplots(1, 2, figsize=(16, 10))
+
+# set titles
+fig.suptitle("The Length of the Coastline of Mainland Great Britain")
+my_axs[0].set_title(f"Original: {before_line.length / 1000:.0f}km, {len(coord_list)} nodes.")
+my_axs[1].set_title(f"{SIMPLIFICATION_PERC}% Simplified: {after_line.length / 1000:.0f}km, {len(simplified_nodes)} nodes.")
+
+# reduce the gap between the subplots
+subplots_adjust(wspace=0)
+
+osgb = "EPSG:27700"
+
+# add the original coastline
+GeoSeries(before_line, crs=osgb).plot(
+    ax=my_axs[0],
+    color='blue',
+    linewidth = 0.6,
+	)
+
+# add the new coastline
+GeoSeries(after_line, crs=osgb).plot(
+    ax=my_axs[1],
+    color='red',
+    linewidth = 0.6,
+	)
+
+# edit individual axis
+for my_ax in my_axs:
+
+	# remove axes
+	my_ax.axis('off')
+
+	# add north arrow
+	x, y, arrow_length = 0.95, 0.99, 0.1
+	my_ax.annotate('N', xy=(x, y), xytext=(x, y-arrow_length),
+		arrowprops=dict(facecolor='black', width=5, headwidth=15),
+		ha='center', va='center', fontsize=20, xycoords=my_ax.transAxes)
+
+	# add scalebar
+	my_ax.add_artist(ScaleBar(dx=1, units="m", location="lower right"))
+
+# save the result
+savefig(f'out/4.png', bbox_inches='tight')
+print("done!")
