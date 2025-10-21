@@ -4,7 +4,7 @@ from sys import exit
 
 from math import sqrt
 
-
+from shapely.geometry import LineString
 
 # open a dataset of all countries in the world
 world = read_file("E:/Manchester/UGIS/data/natural-earth/ne_10m_admin_0_countries.shp")
@@ -79,7 +79,7 @@ if n_nodes < 3:
     n_nodes = 3 
 
 print(f"Target number of nodes: {n_nodes}")
-
+print()
 
 def visvalingam_whyatt(node_list, n_nodes):
 # loop through each node, excluding the end points
@@ -96,35 +96,43 @@ def visvalingam_whyatt(node_list, n_nodes):
  areas.insert(0, {"point": node_list[0], "area": 0})
  areas.insert(len(areas), {"point": node_list[len(node_list)-1], "area": 0})
  
- # remove one node and overwrite it with the new, shorter list
- simplified_nodes = visvalingam_whyatt(coord_list, n_nodes)
 
  # take a copy of the list so that we don't edit the original
  nodes = areas.copy()
 
  # keep going as long as the number of nodes is greater than the desired number
  while len(nodes) > n_nodes:
-
-  # remove the current point from the list
+     
+  min_area = float("inf")
   node_to_delete = -1
-  nodes.pop(node_to_delete)
+  
  
+  
+  for i in range(1, len(nodes)-1):
+            if nodes[i]['area'] < min_area:
+                min_area = nodes[i]['area']
+                node_to_delete = i
+                
+  if node_to_delete != -1:
+    # remove the current point from the list
+    nodes.pop(node_to_delete)
  
-  # recalculate effective area to the left of the deleted node
-  nodes[node_to_delete-1]['area'] = get_effective_area(
-     nodes[node_to_delete-2]['point'], 
-     nodes[node_to_delete-1]['point'], 
-     nodes[node_to_delete]['point'])    # COMPLETE THIS LINE
+    # recalculate effective area to the left of the deleted node
+    if node_to_delete - 1 > 0:
+        nodes[node_to_delete-1]['area'] = get_effective_area(
+         nodes[node_to_delete-2]['point'], 
+         nodes[node_to_delete-1]['point'], 
+         nodes[node_to_delete]['point'])    # COMPLETE THIS LINE
 
- # if there is a node to the right of the deleted node, recalculate the effective area
- if node_to_delete < len(nodes)-1:
-    nodes[node_to_delete]['area'] = get_effective_area(
-        nodes[node_to_delete-1]['point'], 
-        nodes[node_to_delete]['point'],
-        nodes[node_to_delete+1]['point'])        # COMPLETE THIS LINE
+    # if there is a node to the right of the deleted node, recalculate the effective area
+    if node_to_delete < len(nodes)-1:
+        nodes[node_to_delete]['area'] = get_effective_area(
+         nodes[node_to_delete-1]['point'], 
+         nodes[node_to_delete]['point'],
+         nodes[node_to_delete+1]['point'])        # COMPLETE THIS LINE
 
  # extract the nodes and return
- return [node['point'] for node in nodes ]
+ return [node['point'] for node in nodes]
 
  # extract the nodes and return
  out = []
@@ -132,3 +140,16 @@ def visvalingam_whyatt(node_list, n_nodes):
    out.append(node['point'])
 
  return out
+
+# remove one node and overwrite it with the new, shorter list
+simplified_nodes = visvalingam_whyatt(coord_list, n_nodes)
+
+# make a linestring out of the coordinates
+before_line = LineString(coord_list)
+print(f"original node count: {len(coord_list)}")
+print(f"original length: {before_line.length / 1000:.2f}km\n")
+
+# make the resulting list of coordinates into a line
+after_line = LineString(simplified_nodes)
+print(f"simplified node count: {len(simplified_nodes)}")
+print(f"simplified length: {after_line.length / 1000:.2f}km\n")
