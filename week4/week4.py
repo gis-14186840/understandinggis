@@ -5,6 +5,7 @@ from sys import exit
 from math import sqrt
 
 
+
 # open a dataset of all countries in the world
 world = read_file("E:/Manchester/UGIS/data/natural-earth/ne_10m_admin_0_countries.shp")
 
@@ -86,7 +87,7 @@ def visvalingam_whyatt(node_list, n_nodes):
  for i in range(1, len(node_list)-1):
 
    # get the effective area
-   area = get_effective_area(node_list[i-1], node_list[i], node_list[i+1])	# COMPLETE THIS LINE
+   area = get_effective_area(node_list[i-1], node_list[i], node_list[i+1])    # COMPLETE THIS LINE
 
    # append the node and effective area to the list
    areas.append({"point": node_list[i], "area": area})
@@ -95,16 +96,39 @@ def visvalingam_whyatt(node_list, n_nodes):
  areas.insert(0, {"point": node_list[0], "area": 0})
  areas.insert(len(areas), {"point": node_list[len(node_list)-1], "area": 0})
  
-# remove one node and overwrite it with the new, shorter list
-simplified_nodes = visvalingam_whyatt(coord_list, n_nodes)
+ # remove one node and overwrite it with the new, shorter list
+ simplified_nodes = visvalingam_whyatt(coord_list, n_nodes)
 
+ # take a copy of the list so that we don't edit the original
+ nodes = areas.copy()
 
+ # keep going as long as the number of nodes is greater than the desired number
+ while len(nodes) > n_nodes:
 
+  # remove the current point from the list
+  node_to_delete = -1
+  nodes.pop(node_to_delete)
+ 
+ 
+  # recalculate effective area to the left of the deleted node
+  nodes[node_to_delete-1]['area'] = get_effective_area(
+     nodes[node_to_delete-2]['point'], 
+     nodes[node_to_delete-1]['point'], 
+     nodes[node_to_delete]['point'])    # COMPLETE THIS LINE
 
+ # if there is a node to the right of the deleted node, recalculate the effective area
+ if node_to_delete < len(nodes)-1:
+    nodes[node_to_delete]['area'] = get_effective_area(
+        nodes[node_to_delete-1]['point'], 
+        nodes[node_to_delete]['point'],
+        nodes[node_to_delete+1]['point'])        # COMPLETE THIS LINE
 
+ # extract the nodes and return
+ return [node['point'] for node in nodes ]
 
+ # extract the nodes and return
+ out = []
+ for node in nodes:
+   out.append(node['point'])
 
-
-
-
-
+ return out
