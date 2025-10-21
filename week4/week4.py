@@ -2,7 +2,6 @@ from geopandas import read_file
 
 from sys import exit
 
-
 from math import sqrt
 
 
@@ -79,4 +78,33 @@ if n_nodes < 3:
     n_nodes = 3 
 
 print(f"Target number of nodes: {n_nodes}")
+
+
+def visvalingam_whyatt(node_list, n_nodes):
+# loop through each node, excluding the end points
+ areas = []
+ for i in range(1, len(node_list)-1):
+
+   # get the effective area
+   area = get_effective_area(node_list[i-1], node_list[i], node_list[i+1])	# COMPLETE THIS LINE
+
+   # append the node and effective area to the list
+   areas.append({"point": node_list[i], "area": area})
+  
+ # add the end points back in at the start (0) and end (len(areas))
+ areas.insert(0, {"point": node_list[0], "area": 0})
+ areas.insert(len(areas), {"point": node_list[len(node_list)-1], "area": 0})
+ 
+# remove one node and overwrite it with the new, shorter list
+simplified_nodes = visvalingam_whyatt(coord_list, n_nodes)
+
+
+
+
+
+
+
+
+
+
 
