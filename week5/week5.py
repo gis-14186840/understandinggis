@@ -19,3 +19,27 @@ origin = (345678, 456789)
 destination = compute_offset(origin, 1011, 123)	# move 1011m in a direction of 123 degrees 
 print("CORRECT!!" if (int(destination[0]), int(destination[1])) == (345127, 457636) 
       else f"INCORRECT!! Error: {(int(destination[0])-345127, int(destination[1])-457636)}")
+
+
+
+# PART 2
+
+import geopandas as gpd
+
+# Open the countries shapefile as a GeoDataFrame and store in 'world'
+world = gpd.read_file("E:/Manchester/UGIS/data/natural-earth/ne_10m_admin_0_countries.shp")
+
+# Extract the Iceland row using ISO code 'ISL' and store in 'iceland'
+iceland = world[world['ISO_A3'] == 'ISL'] 
+
+# Open the Iceland land cover shapefile as a GeoDataFrame and store in 'land_cover'
+land_cover = gpd.read_file("E:/Manchester/UGIS/data/iceland/gis_osm_natural_a_free_1.shp")
+
+# Extract rows where fclass is "glacier" and store in 'ice'
+ice = land_cover[land_cover['fclass'] == "glacier"]
+
+# Get the bounds of Iceland
+minx, miny, maxx, maxy = iceland.total_bounds
+
+# Print the bounds to verify
+print(minx, miny, maxx, maxy)
