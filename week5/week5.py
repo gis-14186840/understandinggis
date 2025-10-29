@@ -175,8 +175,14 @@ for ax_num, projection in enumerate(projections):
     # calculate the distortion
     Ep, Es, Ea = evaluate_distortion(g, transformer, minx, miny, maxx, maxy, 10000, 1000000, 1000)
     
+    # calculate ice area
+    ice_area_km2 = ice.to_crs(projection['proj']).geometry.area.sum() / 1000000
+
+
+# report to user
+print(f"\n{projection['name']} ({projection['description']})")
+print(f"   {"Distance distortion (Ep):":<26}{Ep:.6f}")
+print(f"   {"Shape distortion (Es):":<26}{Es:.6f}")
+print(f"   {"Area distortion (Ea):":<26}{Ea:.6f}")
+print(f"   {"Ice Area:":<26}{ice_area_km2 / 1000:,.0f} km sq.")
     
-    print(f"{projection['name']} ({projection['description']}):")
-    print(f"  Distance Distortion (Ep): {Ep:.6f}")
-    print(f"  Shape Distortion (Es): {Es:.6f}")
-    print(f"  Area Distortion (Ea): {Ea:.6f}")
