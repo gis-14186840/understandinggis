@@ -14,6 +14,7 @@ def compute_offset(origin, distance, direction):
     offset_y = origin[1] + sin(direction_rad) * distance	# COMPLETE THIS LINE 
     return (offset_x, offset_y)
 
+
 # this code tests whether your function works correctly
 origin = (345678, 456789)
 destination = compute_offset(origin, 1011, 123)	# move 1011m in a direction of 123 degrees 
@@ -103,13 +104,7 @@ def make_bounds_square(ax):
         ax.set_xlim((ax_bounds_x[0] - buffer, ax_bounds_x[1] + buffer))
 
 
-def compute_offset(center, distance, azimuth):
-    """Calculate offset coordinates from center point"""
-    x, y = center
-    rad_azimuth = np.radians(azimuth)
-    offset_x = x + distance * np.cos(rad_azimuth)
-    offset_y = y + distance * np.sin(rad_azimuth)
-    return (offset_x, offset_y)
+
 
 
 def evaluate_distortion(g, transformer, minx, miny, maxx, maxy, minr=10000, maxr=1000000, sample_number=1000, vertices=16):
@@ -191,14 +186,16 @@ def evaluate_distortion(g, transformer, minx, miny, maxx, maxy, minr=10000, maxr
     
     return Ep, Es, Ea
 
+if __name__ == "__main__":
+    # Loading the datasets
+    
+  # create a 2x2 figure
+  fig, my_axs = subplots(2, 2, figsize=(10, 10), constrained_layout=True)
+  fig.suptitle('How much Ice is in Iceland?\n', fontsize=20)
+  text = ""
 
-# create a 2x2 figure
-fig, my_axs = subplots(2, 2, figsize=(10, 10), constrained_layout=True)
-fig.suptitle('How much Ice is in Iceland?\n', fontsize=20)
-text = ""
-
-# loop through each CRS
-for ax_num, projection in enumerate(projections): 
+  # loop through each CRS
+  for ax_num, projection in enumerate(projections): 
     
     # get x and y position of current axis
     axx = ax_num // my_axs.shape[0]
@@ -255,21 +252,27 @@ for ax_num, projection in enumerate(projections):
     make_bounds_square(my_axs[axx][axy])
 
 
-# disable axis on the empty axis
-my_axs[1][1].axis('off')
+  # disable axis on the empty axis
+  my_axs[1][1].axis('off')
 
-# manually draw a legend to the empty axis
-my_axs[1][1].legend([Patch(facecolor='#e6f5f9', edgecolor='#e6f5f9', label='Glacier')], ['Glacier'], loc='lower right')
+  # manually draw a legend to the empty axis
+  my_axs[1][1].legend([Patch(facecolor='#e6f5f9', edgecolor='#e6f5f9', label='Glacier')], ['Glacier'], loc='lower right')
 
-# add north arrow to empty axis
-x, y, arrow_length = 0.9, 0.3, 0.15
-my_axs[1][1].annotate('N', xy=(x, y), xytext=(x, y-arrow_length),
+  # add north arrow to empty axis
+  x, y, arrow_length = 0.9, 0.3, 0.15
+  my_axs[1][1].annotate('N', xy=(x, y), xytext=(x, y-arrow_length),
     arrowprops=dict(facecolor='black', width=3, headwidth=9),
     ha='center', va='center', fontsize=16, xycoords=my_axs[1][1].transAxes)
 
-# add the results to the empty axis - monospace font ensures table alignment
-my_axs[1][1].text(0.1, 0.4, text, fontfamily='monospace')
+  # add the results to the empty axis - monospace font ensures table alignment
+  my_axs[1][1].text(0.1, 0.4, text, fontfamily='monospace')
 
-# save the result
-savefig('out/5.png', bbox_inches='tight')
-print("done!")
+  # save the result
+  savefig('out/5.png', bbox_inches='tight')
+  print("done!")
+
+
+
+# Part 3
+# Making code into a library (detail in test.pyweek5)
+
