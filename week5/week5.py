@@ -26,6 +26,8 @@ print("CORRECT!!" if (int(destination[0]), int(destination[1])) == (345127, 4576
 
 import geopandas as gpd
 
+from pyproj import Geod, CRS, Transformer
+
 # Open the countries shapefile as a GeoDataFrame and store in 'world'
 world = gpd.read_file("E:/Manchester/UGIS/data/natural-earth/ne_10m_admin_0_countries.shp")
 
@@ -43,3 +45,35 @@ minx, miny, maxx, maxy = iceland.total_bounds
 
 # Print the bounds to verify
 print(minx, miny, maxx, maxy)
+
+
+# set the geographical proj string and ellipsoid (should be the same)
+geo_string = "+proj=longlat +datum=WGS84 +no_defs"
+g = Geod(ellps='WGS84')
+
+# create a list of dictionaries for the projected CRS' to evaluate for distortion
+projections = [
+        {'name': "Web Mercator", 
+            'description': "Global Conformal", 
+            'proj': "+proj=webmerc +datum=WGS84 +units=m +no_defs"},
+        {'name': "Eckert IV", 
+            'description': "Global Equal Area", 
+            'proj': "+proj=eck4 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"},
+        {'name': "Iceland Albers", 
+            'description': "Local Equal Area", 
+            'proj': "+proj=aea +lat_0=65 +lon_0=-19 +lat_1=64 +lat_2=66 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"}
+    ]
+
+
+
+
+# loop through each CRS
+for ax_num, projection in enumerate(projections):
+
+    print(f"{projection['name']}")
+    
+    # initialise a PyProj Transformer to transform coordinates
+    transformer = Transformer.from_crs(CRS.from_proj4(geo_string), 
+                                       CRS.from_proj4(projection['proj']), 
+                                       always_xy=True)
+
