@@ -4,6 +4,8 @@ from rasterio.transform import rowcol
 from rasterio.plot import show as rio_show
 from matplotlib.pyplot import subplots, savefig
 
+from numpy import zeros
+
 def coord_2_img(transform, x, y):
 	""" 
 	* Convert from coordinate space to image space using the 
@@ -30,4 +32,14 @@ rio_show(
 )
 
 # save the resulting map
-savefig('./out/6.png', bbox_inches='tight')
+# savefig('./out/6.png', bbox_inches='tight')
+
+# create a new 'band' of raster data the same size
+output = zeros(dem_data.shape)
+
+# add the empty layer
+rio_show(
+    output,
+    ax=my_ax,
+    transform=dem.transform
+    )
