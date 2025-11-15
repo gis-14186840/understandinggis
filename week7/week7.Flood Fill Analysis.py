@@ -47,6 +47,6 @@ with rio_open("E:/Manchester/UGIS/data/helvellyn/Helvellyn-50.tif") as dem:
         cmap=cmap)
 
 # save the resulting map
-# savefig('./out/6.png', bbox_inches='tight')
+savefig('./out/6.png', bbox_inches='tight')
 
 
