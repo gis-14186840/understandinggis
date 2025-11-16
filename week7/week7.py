@@ -44,20 +44,26 @@ with rio_open('E:/Manchester/UGIS/data/helvellyn/Helvellyn-50.tif') as dem:
     print(f"\nHelvellyn elevation：{summit_elevation:.0f}m")
     
     
-# part 2    
-
+# part 2   
+ 
+# open the raster dataset
+with rio_open('E:/Manchester/UGIS/data/helvellyn/Helvellyn-50.tif') as dem:
+    
+    # read the data out of band 1 in the dataset
+    dem_data = dem.read(1)
+    
     # plot the dataset
     fig, my_ax = subplots(1, 1, figsize=(16, 10))
     
     # add the DEM
     rio_show(
-      band_1,
+      dem_data,
       ax=my_ax,
       transform = dem.transform,
     )
     
     # create a new 'band' of raster data the same size
-    output = zeros(band_1.shape)
+    output = zeros(dem_data.shape)
     
     # Plot flooded areas
     cmap = LinearSegmentedColormap.from_list('binary', [(0, 0, 0, 0), (0, 0.5, 1, 0.5)], N=2)
