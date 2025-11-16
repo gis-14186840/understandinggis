@@ -37,6 +37,36 @@ def flood_fill(depth, x0, y0, dem_data, transform):
     # calculate the maximum elevation of the flood
     flood_extent = dem_data[r0][c0] + depth
     
+	# keep looping as long as there are cells left to be checked
+    while to_assess:
+    
+        # get the next cell to be assessed (removing it from the to_assess set)
+        r, c = to_assess.pop()
+
+        # add it to the register of those already assessed
+        assessed.add((r, c))
+        
+        # Check if cell should be flooded
+        if dem_data[r][c] <= flood_extent:
+            
+            # Mark as flooded
+            flood_layer[r][c] = 1  
+    
+            # loop through all neighbouring cells
+            for r_adj, c_adj in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
+                
+                # get current neighbour
+                neighbour = (r + r_adj, c + c_adj)
+        
+                # ...then add to the set for assessment
+                if 0 <= neighbour[0] < dem.height and 0 <= neighbour[1] < dem.width and neighbour not in assessed:
+                    
+                    # ...then add to the set for assessment
+                    to_assess.add(neighbour) 
+        
+    # when complete, return the result
+    return flood_layer
+
 # set the depth of the flood
 FLOOD_DEPTH = 2
 
@@ -52,3 +82,4 @@ with rio_open("E:/Manchester/UGIS/data/helvellyn/Helvellyn-50.tif") as dem:  # 5
     # calculate the flood
     output = flood_fill(FLOOD_DEPTH, LOCATION[0], LOCATION[1], dem_data, dem.transform)
     
+    print(output.sum())
