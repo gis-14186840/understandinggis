@@ -2,6 +2,13 @@ from rasterio import open as rio_open
 
 from rasterio.transform import rowcol, xy
 
+from rasterio.plot import show as rio_show
+from matplotlib.pyplot import subplots, savefig
+
+from numpy import zeros
+
+from matplotlib.colors import LinearSegmentedColormap
+
 def coord_2_img(transform, x, y):
     """ 
     * Convert from coordinate space to image space using the 
@@ -35,3 +42,32 @@ with rio_open('E:/Manchester/UGIS/data/helvellyn/Helvellyn-50.tif') as dem:
     # print result
     summit_elevation = band_1[summit_row][summit_col]
     print(f"\nHelvellyn elevation：{summit_elevation:.0f}m")
+    
+    
+# part 2    
+
+    # plot the dataset
+    fig, my_ax = subplots(1, 1, figsize=(16, 10))
+    
+    # add the DEM
+    rio_show(
+      band_1,
+      ax=my_ax,
+      transform = dem.transform,
+    )
+    
+    # create a new 'band' of raster data the same size
+    output = zeros(band_1.shape)
+    
+    # Plot flooded areas
+    cmap = LinearSegmentedColormap.from_list('binary', [(0, 0, 0, 0), (0, 0.5, 1, 0.5)], N=2)
+    
+    # add the empty layer
+    rio_show(
+        output,
+        ax=my_ax,
+        transform=dem.transform,
+        cmap=cmap)
+
+# save the resulting map
+savefig('./out/6.png', bbox_inches='tight')
