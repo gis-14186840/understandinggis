@@ -3,8 +3,9 @@ from rasterio import open as rio_open
 from rasterio.plot import show as rio_show
 from matplotlib.pyplot import subplots, savefig
 from matplotlib.colors import LinearSegmentedColormap
-
 from skimage.draw import line, circle_perimeter
+
+from sys import exit
 
 # Function to convert coordinate space (x,y) to image space (row,col)
 def coords_2_img(x, y, transform):
@@ -45,6 +46,18 @@ with rio_open("E:/Manchester/UGIS/data/helvellyn/Helvellyn-50.tif") as dem:
 def viewshed(x0, y0, radius_m, observer_height, target_height, dem_data, transform):
     # Convert origin to image space
     r0, c0 = coords_2_img(x0, y0, transform)
+    
+    # make sure that we are within the dataset
+    if not (0 <= r0 < dem_data.shape[0] and 0 <= c0 < dem_data.shape[1]):
+        print(f"Sorry: {x0, y0} is not within the elevation dataset.")
+        exit()
+        
+    # convert the radius (m) to pixels
+    radius_px = int(radius_m / transform[0])
+    
+    # get the observer height (above sea level)
+    height0 = dem_data[r0, c0] + observer_height
+    print(f"Observer elevation: {height0:.1f} m")
             
 # Main execution
 if __name__ == "__main__":
