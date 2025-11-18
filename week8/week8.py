@@ -2,10 +2,20 @@ from numpy import zeros, column_stack
 from rasterio import open as rio_open
 from rasterio.plot import show as rio_show
 from matplotlib.pyplot import subplots, savefig
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, Normalize
 from skimage.draw import line, circle_perimeter
 
 from sys import exit
+
+from math import hypot, floor, ceil
+
+from matplotlib.cm import ScalarMappable
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
+from matplotlib_scalebar.scalebar import ScaleBar
+from geopandas import GeoSeries
+from shapely.geometry import Point
+from skimage.draw import line, circle_perimeter
 
 # Function to convert coordinate space (x,y) to image space (row,col)
 def coords_2_img(x, y, transform):
@@ -42,6 +52,7 @@ with rio_open("E:/Manchester/UGIS/data/helvellyn/Helvellyn-50.tif") as dem:
         if 0 <= r < output.shape[0] and 0 <= c < output.shape[1]:
             output[r, c] = 1  # Set circle pixels to 1
             
+           
 # Viewshed main function
 def viewshed(x0, y0, radius_m, observer_height, target_height, dem_data, transform):
     # Convert origin to image space
@@ -67,6 +78,37 @@ def viewshed(x0, y0, radius_m, observer_height, target_height, dem_data, transfo
        pass
 
     # return the resulting viewshed
+    return output
+
+# The line_of_sight() function
+def line_of_sight(r0, c0, height0, r1, c1, target_height, radius, dem_data, transform, output):
+    # Initialize max slope tracker
+    max_dydx = -float('inf')
+
+    # Get line pixels (exclude first pixel)
+    line_pixels = column_stack(line(r0, c0, r1, c1))[1:]
+
+    # Loop through line pixels
+    for r, c in line_pixels:
+        # Calculate distance (pixels) from origin
+        dx = hypot(r - r0, c - r0)
+
+        # if we go too far, or go off the edge of the data, stop looping
+        if dx > radius or not 0 <= r < dem_data.shape[0] or not 0 <= c < dem_data.shape[1]:
+            break
+
+        # calculate the current value for dy / dx
+        base_dydx = (dem_data[(r, c)] - height0) / dx
+        tip_dydx = (dem_data[(r, c)] + target_height - height0) / dx
+
+        # if the tip dydx is bigger than the previous max, it is visible
+        if (tip_dydx > max_dydx):
+            output[(r, c)] = 1
+
+		# if the base dydx is bigger than the previous max, update
+        max_dydx = max(max_dydx, base_dydx)
+
+    # return updated output surface
     return output
             
 # Main execution
