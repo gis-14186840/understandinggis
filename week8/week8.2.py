@@ -1,47 +1,49 @@
 from numpy import zeros, column_stack
 from rasterio import open as rio_open
-from skimage.draw import line, circle_perimeter
-
-from sys import exit
-
-from skimage.draw import line, circle_perimeter
-
-from math import floor, ceil, hypot
-from geopandas import GeoSeries
-from shapely.geometry import Point
-from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
-from matplotlib.colors import Normalize
-from matplotlib.cm import ScalarMappable
 from rasterio.plot import show as rio_show
 from matplotlib.pyplot import subplots, savefig
+from matplotlib.colors import LinearSegmentedColormap, Normalize
+from matplotlib.cm import ScalarMappable
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 from matplotlib_scalebar.scalebar import ScaleBar
-from matplotlib.colors import LinearSegmentedColormap
+from geopandas import GeoSeries
+from shapely.geometry import Point
+from skimage.draw import line, circle_perimeter
+from math import hypot, floor, ceil
+from sys import exit
 
 # Function to convert coordinate space (x,y) to image space (row,col)
 def coords_2_img(x, y, transform):
-    """Convert (x,y) coordinates to (row,col) in image space"""
-    col, row = ~transform * (x, y)  # Use inverse transform
-    return int(round(row)), int(round(col))  # Return as integers
-        
-           
+    col, row = ~transform * (x, y)
+    return int(round(row)), int(round(col))
+
+# Height correction function (considering the curvature of the Earth and atmospheric refraction)
+def adjust_height(height, distance, earth_diameter=12740000, refraction_coefficient=0.13):
+    """
+    * Adjust the apparent height of an object at a certain distance, accounting for the
+    * curvature of the earth and atmospheric refraction
+    """
+    # adjusted_height = height - (Δx² / D) × (1 - R)
+    return height - (distance** 2 / earth_diameter) * (1 - refraction_coefficient)
+
 # Viewshed main function
 def viewshed(x0, y0, radius_m, observer_height, target_height, dem_data, transform):
     # Convert origin to image space
     r0, c0 = coords_2_img(x0, y0, transform)
-    
+
     # make sure that we are within the dataset
     if not (0 <= r0 < dem_data.shape[0] and 0 <= c0 < dem_data.shape[1]):
         print(f"Sorry: {x0, y0} is not within the elevation dataset.")
         exit()
-        
+
     # convert the radius (m) to pixels
     radius_px = int(radius_m / transform[0])
     
     # get the observer height (above sea level)
     height0 = dem_data[r0, c0] + observer_height
     print(f"Observer elevation: {height0:.1f} m")
-    
+
     # Create output raster
     output = zeros(dem_data.shape, dtype=dem_data.dtype)
     output[r0, c0] = 1  # Origin is visible
@@ -67,25 +69,29 @@ def line_of_sight(r0, c0, height0, r1, c1, target_height, radius, dem_data, tran
     for r, c in line_pixels:
         # Calculate distance (pixels) from origin
         dx = hypot(r - r0, c - r0)
+        dx_m = dx * transform[0]    # trabsform to meter
 
-        # if we go too far, or go off the edge of the data, stop looping
+        # if the tip dydx is bigger than the previous max, it is visible
         if dx > radius or not 0 <= r < dem_data.shape[0] or not 0 <= c < dem_data.shape[1]:
             break
 
-        # calculate the current value for dy / dx
-        base_dydx = (dem_data[(r, c)] - height0) / dx
-        tip_dydx = (dem_data[(r, c)] + target_height - height0) / dx
+        # Obtain the original height and apply the correction
+        terrain_height = dem_data[(r, c)]  # Original height of the terrain
+        adjusted_terrain = adjust_height(terrain_height, dx_m)  # The corrected terrain height
+        adjusted_tip = adjust_height(terrain_height + target_height, dx_m)  # The corrected top height of the target
+
+        # Calculate the slope using the corrected height
+        base_dydx = (adjusted_terrain - height0) / dx  # Use the corrected terrain height
+        tip_dydx = (adjusted_tip - height0) / dx      # Use the corrected target height
 
         # if the tip dydx is bigger than the previous max, it is visible
         if (tip_dydx > max_dydx):
             output[(r, c)] = 1
-
-		# if the base dydx is bigger than the previous max, update
         max_dydx = max(max_dydx, base_dydx)
 
     # return updated output surface
     return output
-            
+
 # Main execution
 with rio_open("E:/Manchester/UGIS/data/helvellyn/Helvellyn-50.tif") as dem:
     dem_data = dem.read(1)
@@ -99,8 +105,8 @@ with rio_open("E:/Manchester/UGIS/data/helvellyn/Helvellyn-50.tif") as dem:
     
     # calculate the viewshed
     output = viewshed(x0, y0, 20000, 1.8, 100, dem_data, dem.transform)
-    
-    
+
+
 # output image
 fig, my_ax = subplots(1, 1, figsize=(16, 10))
 my_ax.set_title("Viewshed Analysis")
@@ -159,5 +165,5 @@ my_ax.legend(
 	], loc='lower left')
 
 # save the result
-savefig('./out/7.png', bbox_inches='tight')
+savefig('./out/8.png', bbox_inches='tight')
 print("done!")
