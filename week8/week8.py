@@ -58,6 +58,16 @@ def viewshed(x0, y0, radius_m, observer_height, target_height, dem_data, transfo
     # get the observer height (above sea level)
     height0 = dem_data[r0, c0] + observer_height
     print(f"Observer elevation: {height0:.1f} m")
+    
+    # get pixels in the perimeter of the viewshed
+    for r, c in column_stack(circle_perimeter(r0, c0, radius_px)):
+
+	   # calculate line of sight to each pixel, pass output and get a new one back each time
+	   #output = line_of_sight(r0, c0, height0, r, c, target_height, radius_px, dem_data, transform, output)
+       pass
+
+    # return the resulting viewshed
+    return output
             
 # Main execution
 if __name__ == "__main__":
