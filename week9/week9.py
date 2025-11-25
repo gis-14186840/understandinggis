@@ -1,36 +1,75 @@
 # Import the library
-from networkx import Graph, is_eulerian, eulerian_circuit
+from osmnx import graph_from_xml
 
-# Create a graph object
-graph = Graph()
+from shapely import STRtree
+from shapely.geometry import Point
 
-# Add a node to the graph
-graph.add_node(id)
+from pyproj import Geod
 
 
-# Add the 4 islands (nodes), colours as per the above diagram
-graph.add_node('Blue')
-graph.add_node('Green')
-graph.add_node('Yellow')
-graph.add_node('Purple')
 
-# Add the 7 bridges (edges), colours as per the above diagram
-graph.add_edge('Blue','Green', id=1)	# e.g. this is a bridge from the Blue to Green island
-graph.add_edge('Blue', 'Green', id=2)
-graph.add_edge('Blue', 'Yellow', id=3)
-graph.add_edge('Blue', 'Yellow', id=4)
-graph.add_edge('Blue', 'Purple', id=5)
-graph.add_edge('Green', 'Purple', id=6)
-graph.add_edge('Yellow', 'Purple', id=7)
+# create a MultiDiGraph from an XML dataset from OpenStreetMap
+graph = graph_from_xml('E:/Manchester/UGIS/data/kaliningrad/kaliningrad.xml')
 
-# Print a report about the graph that you have just made
-print(f"We have {len(list(graph.edges()))} bridges between {len(list(graph.nodes()))} islands.")
+# create spatial index from graph
+idx = STRtree([Point(n[1]['x'], n[1]['y']) for n in graph.nodes(data=True)])
 
-# Returns True or False to describe whether or not the graph is Eulerian
-if is_eulerian(graph):
-    print("The graph IS Eulerian.")
+# specify the start and end point of your route
+from_point = Point(20.483322, 54.692934)
+to_point = Point(20.544863, 54.723827)
 
-# Return the Eulerian route around Kaliningrad
-    print("Eulerian Circuit:", list(eulerian_circuit(graph)))
-else:
-    print("The graph IS NOT Eulerian.")
+# calculate the 'from' and 'to' node as the nearest to the specified coordinates
+from_node_id, to_node_id = idx.nearest([from_point, to_point])
+
+# get the IDs from the Graph to get the nodes themselves
+node_list = list(graph.nodes())
+from_node = node_list[from_node_id]
+to_node = node_list[to_node_id]
+
+# print the 'from' and 'to' nodes to the console
+print(graph.nodes()[from_node], graph.nodes()[to_node])
+
+# Get actual node IDs from the graph (map index to node ID)
+node_list = list(graph.nodes())
+from_node = node_list[from_node_id]
+to_node = node_list[to_node_id]
+
+
+# Define Heuristic Function (Ellipsoidal Distance)
+def ellipsoidal_distance(node_a, node_b):
+	"""
+	Calculate the 'as the crow flies' distance between two nodes in a graph using
+	 the Inverse Vincenty method, via the PyProj library.
+	"""
+	# extract the data (the coordinates) from node_a and node_b
+	point_a = graph.nodes(data=True)[node_a]
+	point_b = graph.nodes(data=True)[node_b]
+
+	# compute the distance across the WGS84 ellipsoid (the one used by the dataset)
+	return Geod(ellps='WGS84').inv(point_a['x'], point_a['y'], point_b['x'], point_b['y'])[2]
+
+
+# Define Route Reconstruction Function
+def reconstruct_path(end_node, parent_node, parents):
+	"""
+	Once we have found the end node of our route, reconstruct the shortest path 
+	 to it using the parents list
+	"""
+	# initialise a list that will contain the path, beginning with the current node (the end of the route)
+	path = [end_node]
+	
+	# then get the parent (the node from which we arrived at the end of the route)
+	node = parent_node
+
+	# loop back through the list of explored nodes until we reach the start node (the one where parent == None)
+	while node is not None:
+
+		# for each node in the path, add it to the path...
+		path.append(node)
+
+		# ...and move on to its parent (the one before it in the path)
+		node = parents[node]
+	
+	# finally, reverse the path (so it goes start -> end) and return it
+	path.reverse()	# note that this is an 'in place' function that edits the list itself, it does not return anything!
+	return path
