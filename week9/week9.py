@@ -2,7 +2,7 @@
 from osmnx import graph_from_xml
 
 from shapely import STRtree
-from shapely.geometry import Point
+from shapely.geometry import Point, LineString
 
 from pyproj import Geod
 
@@ -11,6 +11,15 @@ from networkx import NodeNotFound, NetworkXNoPath
 
 from heapq import heappush, heappop
 
+from geopandas import GeoSeries
+
+from geopandas import read_file
+from shapely.geometry import Point
+from matplotlib.patches import Patch
+from matplotlib_scalebar.scalebar import ScaleBar
+from matplotlib.pyplot import subplots, savefig, Line2D
+
+import os
 
 # create a MultiDiGraph from an XML dataset from OpenStreetMap
 graph = graph_from_xml('E:/Manchester/UGIS/data/kaliningrad/kaliningrad.xml')
@@ -182,3 +191,99 @@ except NetworkXNoPath:
     exit()
 
 
+# Convert Path to LineString
+def path_to_linestring(start_point, path_list, end_point):
+
+    # Initialise the list with the start point coordinates (x, y)
+    line = [start_point.coords[0]]  # Extract (lon, lat) tuple from Point
+    
+    # Loop through each node in the shortest path and add coordinates
+    for n in path_list:
+        # Get the node's coordinate data from the graph
+        node = graph.nodes(data=True)[n]
+        # Append (x, y) tuple to the line list (matches start_point format)
+        line.append((node['x'], node['y']))  # Complete missing line
+    
+    # Append the end point coordinates to the list
+    line.append(end_point.coords[0])  # Complete missing line
+    
+    # Return as a Shapely LineString
+    return LineString(line)
+
+# Convert shortest path to LineString and print for verification
+path_linestring = path_to_linestring(from_point, shortest_path, to_point)
+print("\nConverted Path to LineString:")
+print(path_linestring)
+
+
+# Convert LineString to GeoSeries & Project
+# Define CRS strings (WGS84 geographic & UTM34N projected)
+wgs84 = "EPSG:4326"  # WGS84 (default for OSM data)
+utm34 = "EPSG:32634" # UTM Zone 34N (appropriate for Kaliningrad)
+
+# Convert LineString to GeoSeries and reproject to UTM34N
+path_geoseries = GeoSeries(path_linestring, crs=wgs84).to_crs(utm34)
+
+# Print projected GeoSeries to verify
+print("\nProjected Path GeoSeries (UTM34N):")
+print(path_geoseries)
+
+
+# Create & Save the Map
+# Create output directory if it doesn't exist
+os.makedirs('./out', exist_ok=True)
+
+# Load background data (buildings and water) and reproject to UTM34N
+buildings = read_file('E:/Manchester/UGIS/data/kaliningrad/buildings.shp').to_crs(utm34)
+water = read_file('E:/Manchester/UGIS/data/kaliningrad/water.shp').to_crs(utm34)
+
+# Create map figure
+fig, my_ax = subplots(1, 1, figsize=(16, 10))
+my_ax.axis('off')  # Hide axis labels/ticks
+my_ax.set(title="The 4 Bridges of Kaliningrad: A* Shortest Path")
+
+# Set map bounds with 1000m buffer around the path
+buffer = 1000
+path_bounds = path_geoseries.geometry.iloc[0].bounds
+my_ax.set_xlim([path_bounds[0] - buffer, path_bounds[2] + buffer])
+my_ax.set_ylim([path_bounds[1] - buffer, path_bounds[3] + buffer])
+
+# Plot background layers (zorder controls drawing order: lower = behind)
+water.plot(ax=my_ax, color='#a6cee3', linewidth=1, zorder=1)    # Water (light blue)
+buildings.plot(ax=my_ax, color='grey', linewidth=1, zorder=2)    # Buildings (grey)
+
+# Plot the shortest path (purple, thick line)
+path_geoseries.plot(ax=my_ax, color='#984ea3', linewidth=3, zorder=4)
+
+# Plot start (blue) and end (red) points (projected to UTM34N)
+GeoSeries([from_point], crs=wgs84).to_crs(utm34).plot(
+    ax=my_ax, markersize=60, color='blue', edgecolor='black', zorder=5
+)
+GeoSeries([to_point], crs=wgs84).to_crs(utm34).plot(
+    ax=my_ax, markersize=60, color='red', edgecolor='black', zorder=6
+)
+
+# Add custom legend
+legend_elements = [
+    Line2D([0], [0], marker='o', color='w', markerfacecolor='blue', markeredgecolor='black', markersize=8, label='Origin'),
+    Line2D([0], [0], marker='o', color='w', markerfacecolor='red', markeredgecolor='black', markersize=8, label='Destination'),
+    Patch(facecolor='grey', label='Buildings'),
+    Patch(facecolor='#a6cee3', edgecolor='#a6cee3', label='Water'),
+    Line2D([0], [0], color='#984ea3', lw=3, label='Path'),
+    Line2D([0], [0], color='#4daf4a', lw=3, label='Path(NX)')  # Reserved for NetworkX comparison (as per tutorial)
+]
+my_ax.legend(handles=legend_elements, loc='lower right', fontsize=10)
+
+# Add north arrow
+x, y, arrow_length = 0.99, 0.99, 0.1
+my_ax.annotate('N', xy=(x, y), xytext=(x, y - arrow_length),
+               arrowprops=dict(facecolor='black', width=5, headwidth=15),
+               ha='center', va='center', fontsize=20, xycoords=my_ax.transAxes)
+
+# Add scale bar (units: meters)
+my_ax.add_artist(ScaleBar(dx=1, units="m", location="lower left"))
+
+# Save the map to output directory
+savefig('./out/10.png', bbox_inches='tight', dpi=150)
+print("\nMap saved to ./out/10.png")
+print("done!")
