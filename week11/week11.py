@@ -1,4 +1,5 @@
 from random import shuffle
+from matplotlib.pyplot import subplots, savefig, subplots_adjust
 
 # create the class
 class Schelling:
@@ -51,6 +52,23 @@ class Schelling:
         self.agents.update(dict(red_group + blue_group))
 
         # print("Agents dictionary:", self.agents) 
+        
+    def plot(self, my_ax, title):
+        """
+        * Plot the current state of the model
+        """
+
+        my_ax.set_title(title, fontsize=10, fontweight='bold')
+        my_ax.set_xlim([0, self.width])
+        my_ax.set_ylim([0, self.height])
+        my_ax.set_xticks([])
+        my_ax.set_yticks([])
+        
+        # plot agents one by one
+        for agent_coords in self.agents:
+            
+            # we can use the agent's group name as the colour directly!
+            my_ax.scatter(agent_coords[0]+0.5, agent_coords[1]+0.5, color=self.agents[agent_coords])
 
 if __name__ == "__main__":
 
@@ -58,8 +76,21 @@ if __name__ == "__main__":
     schelling = Schelling(25, 25, 0.25, 0.6, 500)
 
     # print out each instance variable
-    print("Width:", schelling.width)
-    print("Height:", schelling.height)
-    print("Empty ratio:", schelling.empty_ratio)
+    # print("Width:", schelling.width)
+    # print("Height:", schelling.height)
+    # print("Empty ratio:", schelling.empty_ratio)
+    
+    # initialise plot with two subplots (1 row, 2 columns)
+    fig, my_axs = subplots(1, 2, figsize=(14, 6))
+
+    # reduce the gap between the subplots
+    subplots_adjust(wspace=0.1)
+
+    # plot the initial state of the model into the first axis
+    schelling.plot(my_axs[0], 'Initial State')
+
+    # output image
+    savefig(f"./out/11.png", bbox_inches='tight')
+    print("done")
     print("Similarity threshold:", schelling.similarity_threshold)
     print("Iterations:", schelling.n_iterations)
