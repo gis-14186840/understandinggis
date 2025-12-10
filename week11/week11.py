@@ -3,7 +3,10 @@ from matplotlib.pyplot import subplots, savefig, subplots_adjust
 
 # create the class
 class Schelling:
-
+    
+    # class variable containing list of neighbours
+    neighbours = [ (i, j) for i in range(-1, 2) for j in range(-1, 2) if (i, j) != (0, 0) ]
+      
     def __init__(self, width, height, empty_ratio, similarity_threshold, n_iterations):
         """
         * This function is called a constructor. It is called automatically 
@@ -22,37 +25,65 @@ class Schelling:
 
         # get all house addresses
         all_houses = [(x, y) for x in range(self.width) for y in range(self.height)]
-        # print("All houses:", all_houses)   # temporary test print
 
         # randomise the house list
         shuffle(all_houses)
-        # print("Shuffled houses:", all_houses)  # temporary test print
 
         # calculate number of empty houses
         n_empty = int(self.empty_ratio * len(all_houses))
-        # print("Number of empty houses:", n_empty)
 
         # identify empty houses with list slicing
         self.empty_houses = all_houses[:n_empty]
-        # print("Empty houses:", self.empty_houses)
 
         # the remaining houses
         remaining_houses = all_houses[n_empty:]
-        # print("Remaining houses:", remaining_houses)
-        # print("Check lengths:", len(self.empty_houses) + len(remaining_houses), "should equal", len(all_houses))
-
+  
         # get agents for each group using list slicing and comprehension
         red_group = [[coords, 'red'] for coords in remaining_houses[0::2]]
         blue_group = [[coords, 'blue'] for coords in remaining_houses[1::2]]
-
-        # print("Red group:", red_group)
-        # print("Blue group:", blue_group)
 
         # add both sets of agents to the instance variable
         self.agents.update(dict(red_group + blue_group))
 
         # print("Agents dictionary:", self.agents) 
         
+    def is_unsatisfied(self, agent):
+        """
+        * Determine whether an agent is unsatisfied based on its neighbours
+        """
+        # Initialise counters for same/different group neighbours
+        count_similar = 0
+        count_different = 0
+
+        # Iterate through all 8 neighbours
+        for n in self.neighbours:
+            try:
+                # Calculate neighbour coordinates
+                neighbour_coords = (agent[0]+n[0], agent[1]+n[1])
+                
+                # Check if neighbour's group matches current agent's group
+                if self.agents[neighbour_coords] == self.agents[agent]:
+                    count_similar += 1
+                else:
+                    count_different += 1
+
+            # if we go off the edge of the map or house is empty, there is nothing to do
+            except KeyError:
+                continue
+
+        # Calculate similarity ratio and compare to threshold
+        try:
+            # Calculate proportion of same-group neighbours
+            similarity_ratio = count_similar / (count_similar + count_different)
+            
+            # Return True if ratio is below threshold
+            return similarity_ratio < self.similarity_threshold
+
+        # catch the situation when there are only empty neighbours
+        except ZeroDivisionError:
+            # if this is the case they will be satisfied
+            return False
+                
     def plot(self, my_ax, title):
         """
         * Plot the current state of the model
@@ -79,6 +110,7 @@ if __name__ == "__main__":
     # print("Width:", schelling.width)
     # print("Height:", schelling.height)
     # print("Empty ratio:", schelling.empty_ratio)
+    print(schelling.is_unsatisfied(list(schelling.agents.keys())[0]))
     
     # initialise plot with two subplots (1 row, 2 columns)
     fig, my_axs = subplots(1, 2, figsize=(14, 6))
@@ -90,7 +122,7 @@ if __name__ == "__main__":
     schelling.plot(my_axs[0], 'Initial State')
 
     # output image
-    savefig(f"./out/11.png", bbox_inches='tight')
+    # savefig(f"./out/11.png", bbox_inches='tight')
     print("done")
     print("Similarity threshold:", schelling.similarity_threshold)
     print("Iterations:", schelling.n_iterations)
