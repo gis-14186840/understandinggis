@@ -83,6 +83,16 @@ class Schelling:
         except ZeroDivisionError:
             # if this is the case they will be satisfied
             return False
+        
+    def run(self):
+
+        # Loop from 1 to self.n_iterations + 1 
+        for i in range(1, self.n_iterations + 1):
+            # Initialise counter for number of agents that need to move in this iteration
+            n_changes = 0
+                        
+            # Optional: Print iteration number and number of changes
+            print(f"Iteration {i}: Number of agents moving = {n_changes}")
                 
     def plot(self, my_ax, title):
         """
