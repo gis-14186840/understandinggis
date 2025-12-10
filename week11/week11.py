@@ -1,5 +1,6 @@
-from random import shuffle
+from random import shuffle, choice
 from matplotlib.pyplot import subplots, savefig, subplots_adjust
+from copy import deepcopy
 
 # create the class
 class Schelling:
@@ -90,9 +91,39 @@ class Schelling:
         for i in range(1, self.n_iterations + 1):
             # Initialise counter for number of agents that need to move in this iteration
             n_changes = 0
-                        
-            # Optional: Print iteration number and number of changes
-            print(f"Iteration {i}: Number of agents moving = {n_changes}")
+            
+            # Deep copy: new object with all elements duplicated
+            self.old_agents = deepcopy(self.agents)
+            
+            # Nested loop: iterate through static copy of agents from last iteration
+            for agent in self.old_agents:
+                # Check if agent is unsatisfied
+                if self.is_unsatisfied(agent):
+                    # Randomly choose an empty house for the agent to move to
+                    empty_house = choice(self.empty_houses)
+                    
+                    # Add new location, remove old location
+                    self.agents[empty_house] = self.agents[agent]
+                    del self.agents[agent]
+                    
+                    # Update empty houses list to reflect the move
+                    # Append old agent house to empty list, remove new house from empty list
+                    self.empty_houses.append(agent)
+                    self.empty_houses.remove(empty_house)
+                    
+                    # Increment counter for number of agents moved
+                    n_changes += 1
+            
+            # Update user with iteration progress
+            # print(f"Iteration: {i}, Number of changes: {n_changes}") 
+            
+            # Stop iterating if no agents moved
+            if n_changes == 0:
+                print(f"\nFound optimal solution at {i} iterations\n")
+                break
+        
+        # Return number of iterations completed to calling code
+        return i
                 
     def plot(self, my_ax, title):
         """
@@ -120,7 +151,7 @@ if __name__ == "__main__":
     # print("Width:", schelling.width)
     # print("Height:", schelling.height)
     # print("Empty ratio:", schelling.empty_ratio)
-    print(schelling.is_unsatisfied(list(schelling.agents.keys())[0]))
+    # print(schelling.is_unsatisfied(list(schelling.agents.keys())[0]))
     
     # initialise plot with two subplots (1 row, 2 columns)
     fig, my_axs = subplots(1, 2, figsize=(14, 6))
@@ -130,9 +161,18 @@ if __name__ == "__main__":
 
     # plot the initial state of the model into the first axis
     schelling.plot(my_axs[0], 'Initial State')
-
+    
+    # Run the model and store number of iterations completed
+    iterations = schelling.run()
+    
+    # Add super title to the figure (overall model info)
+    fig.suptitle(f"Schelling Model of Segregation ({schelling.similarity_threshold * 100:.2f}% Satisfaction after {iterations} iterations)")
+    
+    # Plot final state of the model (second axis)
+    schelling.plot(my_axs[1], "Final State")
+    
     # output image
-    # savefig(f"./out/11.png", bbox_inches='tight')
+    savefig(f"./out/schelling_segregation.png", bbox_inches='tight')
     print("done")
     print("Similarity threshold:", schelling.similarity_threshold)
     print("Iterations:", schelling.n_iterations)
