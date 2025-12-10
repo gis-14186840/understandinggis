@@ -1,6 +1,10 @@
-from random import shuffle, choice
+from random import shuffle, choice, seed
 from matplotlib.pyplot import subplots, savefig, subplots_adjust
 from copy import deepcopy
+from random import seed
+
+# Seed value 1824 is used
+seed(1824)
 
 # create the class
 class Schelling:
